@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gisele_app
+    env_file: .env
+    ports:
+      - "8090:80"
+    depends_on:
+      - db
+    volumes:
+      - ./:/var/www/html
+    environment:
+      TZ: Europe/Madrid
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: gisele_db
+    environment:
+      MYSQL_DATABASE: gisele
+      MYSQL_USER: gisele
+      MYSQL_PASSWORD: giselepass
+      MYSQL_ROOT_PASSWORD: rootpass
+      TZ: Europe/Madrid
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gisele_scheduler
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./:/var/www/html
+    environment:
+      TZ: Europe/Madrid
+    entrypoint: ["/bin/sh","-lc"]
+    command: >
+      php artisan migrate --force &&
+      while true; do
+        php artisan tickets:sync --date=today;
+        sleep 900;
+      done
+    restart: unless-stopped
+
+volumes:
+  dbdata:

@@ -1,0 +1,4 @@
+-Esta tienda dispone de API.
+-Vamos a construir un app en laravel que consulte automaticamente todos los dias al endpoint de la api la informacion 
+de los tickets, y estos los vamos a almacenar dentro de mysql, para de esta base de datos coger la informacion
+para construir los powerbi.
